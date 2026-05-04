@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TikTok Shop 后台数据分析</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{
+  --text:#0f172a;--muted:#64748b;--faint:#94a3b8;--line:#dbe5ef;
+  --soft:#f8fafc;--green:#047857;--red:#dc2626;--amber:#b45309;
+  --navy:#0f172a;--shadow:0 20px 58px rgba(15,23,42,.10);--shadow2:0 10px 26px rgba(15,23,42,.065)
+}
+html,body{margin:0;min-height:100%;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",Arial,sans-serif;color:var(--text)}
+body{
+  padding:22px;
+  background:
+    radial-gradient(circle at 8% 6%,rgba(14,165,233,.14),transparent 30%),
+    radial-gradient(circle at 92% 12%,rgba(16,185,129,.13),transparent 32%),
+    linear-gradient(180deg,#f8fafc 0%,#eef3f8 55%,#e8eef6 100%);
+}
+.app{width:min(1280px,100%);margin:0 auto;display:grid;gap:16px}
+.topbar{
+  position:relative;overflow:hidden;min-height:172px;color:#fff;border-radius:30px;padding:28px 32px;
+  background:linear-gradient(135deg,#081225 0%,#13223a 58%,#083d38 100%);
+  box-shadow:0 24px 70px rgba(15,23,42,.24)
+}
+.topbar:before,.topbar:after{content:'';position:absolute;border-radius:50%;filter:blur(18px);pointer-events:none}
+.topbar:before{left:-80px;top:-95px;width:260px;height:260px;background:rgba(59,130,246,.22)}
+.topbar:after{right:-90px;bottom:-110px;width:300px;height:300px;background:rgba(16,185,129,.18)}
+.topbar h1{position:relative;margin:0;font-size:32px;font-weight:1000;letter-spacing:.02em}
+.topbar p{position:relative;width:min(620px,100%);margin:10px 0 0;color:rgba(226,232,240,.78);font-size:14px;font-weight:780;line-height:1.65}
+.topbar p:after{content:'本地解析 / 不上传服务器';display:inline-flex;margin-left:10px;padding:5px 9px;border-radius:999px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.08);color:rgba(255,255,255,.82);font-size:11px;font-weight:950;vertical-align:middle}
+.uploadCard,.panel{
+  background:rgba(255,255,255,.86);border:1px solid rgba(219,226,236,.96);border-radius:28px;
+  box-shadow:var(--shadow);padding:18px;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)
+}
+.uploadCard{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(360px,.85fr);gap:14px;align-items:stretch;margin-top:-52px;position:relative;z-index:2}
+.uploadRow{
+  min-height:158px;display:grid;grid-template-rows:1fr auto;gap:12px;padding:16px;border-radius:22px;
+  border:1px dashed #bfd0e3;background:linear-gradient(180deg,#fff,#f8fafc)
+}
+.uploadRow:before{content:'上传后台收入报表';display:block;font-size:17px;font-weight:1000;color:#0f172a}
+.fileInput{
+  width:100%;max-width:none;align-self:end;border:1px dashed #cbd5e1;background:#fff;border-radius:16px;
+  padding:13px;font-size:13px;font-weight:850;color:#64748b
+}
+.primaryBtn{
+  width:100%;border:0;background:linear-gradient(135deg,#071225,#14213a);color:#fff;border-radius:16px;
+  padding:14px 18px;font-size:15px;font-weight:1000;cursor:pointer;box-shadow:0 14px 30px rgba(15,23,42,.22);
+  transition:.15s
+}
+.primaryBtn:hover{filter:brightness(1.06);transform:translateY(-1px)}
+.primaryBtn:active{transform:scale(.985)}
+.controlGrid{display:grid;grid-template-columns:1fr;gap:12px}
+.controlBox{
+  display:grid;grid-template-columns:minmax(0,1fr) 150px;gap:12px;align-items:center;
+  border:1px solid #dbe5ef;border-radius:20px;background:linear-gradient(180deg,#fff,#f8fafc);padding:15px 16px;
+  box-shadow:var(--shadow2)
+}
+.controlBox .label{font-size:14px;font-weight:1000;color:#172033}.controlBox .sub{margin-top:5px;color:#94a3b8;font-size:11px;font-weight:760;line-height:1.45}
+.numInput{
+  width:150px;height:48px;border:1px solid #dbe5ef;border-radius:16px;background:#fff;text-align:center;
+  font-size:16px;font-weight:950;color:#0f172a;outline:none;transition:.16s
+}
+.numInput:hover{border-color:#b7c4d4}.numInput:focus{border-color:#0f172a;box-shadow:0 0 0 4px rgba(15,23,42,.08),0 12px 28px rgba(15,23,42,.10);transform:scale(1.018)}
+.status{
+  grid-column:1/-1;margin:0;padding:12px 14px;border-radius:16px;background:#f8fafc;border:1px solid #e2e8f0;
+  font-size:12px;color:#64748b;font-weight:850;line-height:1.55
+}
+.panel{padding:0;overflow:hidden}.head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;padding:18px 20px;border-bottom:1px solid rgba(226,232,240,.88);background:rgba(255,255,255,.78)}
+.title{font-size:22px;font-weight:1000}.sub{font-size:12px;color:#64748b;font-weight:850;margin-top:6px}
+.currencyToggle{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;min-width:260px;padding:5px;border:1px solid #dbe5ef;border-radius:999px;background:#f8fafc}
+.currencyToggle button{border:0;border-radius:999px;background:transparent;color:#64748b;padding:8px 10px;font-size:12px;font-weight:1000;cursor:pointer;transition:.14s}
+.currencyToggle button:hover{color:#0f172a;background:#fff}.currencyToggle button.active{background:#0f172a;color:#fff;box-shadow:0 8px 18px rgba(15,23,42,.14)}
+#analysisContent{padding:18px 20px 20px}
+.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:0 0 16px;align-items:stretch}
+.card{
+  position:relative;height:150px;background:linear-gradient(180deg,#fff,#f8fafc);border:1px solid #dbe5ef;
+  border-radius:22px;padding:18px 16px 16px;box-shadow:var(--shadow2);overflow:hidden;display:grid;grid-template-rows:30px 1fr;gap:6px
+}
+.card:after{content:'';position:absolute;right:-36px;bottom:-36px;width:96px;height:96px;border-radius:50%;background:rgba(15,23,42,.035)}
+.card[data-tip],.feeRow[data-tip]{cursor:help}.card .k{position:relative;z-index:1;font-size:15px;color:#64748b;font-weight:1000;line-height:1.25;display:grid;place-items:start center;text-align:center}.card .v{position:relative;z-index:1;width:100%;height:100%;display:grid;place-items:center;text-align:center;font-size:clamp(20px,1.9vw,28px);color:#0f172a;font-weight:1000;line-height:1.24;word-break:break-word;letter-spacing:0}.valueStack{display:grid;place-items:center;width:100%;height:100%;text-align:center}.moneyStack{display:grid;grid-template-rows:1fr 1fr;align-items:center;justify-items:center;width:100%;height:70px;text-align:center}.moneyStack span{display:block;width:100%;text-align:center}.moneyStack .ghost{visibility:hidden}.card.good{border-color:#a7f3d0;background:linear-gradient(135deg,#ecfdf5,#fff 72%)}.card.good .v{color:#047857}.card.bad{border-color:#fecaca;background:linear-gradient(135deg,#fef2f2,#fff 72%)}.card.bad .v{color:#dc2626}
+.card.good .v,.card.bad .v{font-size:clamp(18px,1.55vw,23px)}
+.profitRateLine{display:inline-flex;align-items:center;justify-content:center;margin-top:7px;padding:4px 9px;border-radius:999px;background:rgba(4,120,87,.10);color:#047857;font-size:12px;font-weight:1000;line-height:1.1}.card.bad .profitRateLine{background:rgba(220,38,38,.10);color:#dc2626}
+.feeSection{position:relative;margin-top:18px;padding:18px;border:1px solid #dbe5ef;border-radius:28px;background:#fff;box-shadow:var(--shadow2);overflow:hidden}
+.feeSection:before{content:'';position:absolute;inset:0 0 auto;height:88px;background:linear-gradient(90deg,#f8fafc,#eef7f8);pointer-events:none}
+.feeSectionHead{position:relative;display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:16px}
+.feeSectionTitle{font-size:22px;font-weight:1000;color:#0f172a;line-height:1.2}
+.feeSectionSub{margin-top:7px;font-size:12px;font-weight:820;color:#64748b;line-height:1.55}
+.feeBadge{display:inline-flex;align-items:center;gap:8px;flex:0 0 auto;border:1px solid #dbe5ef;border-radius:999px;background:rgba(255,255,255,.72);padding:9px 12px;font-size:12px;font-weight:950;color:#047857;box-shadow:0 8px 18px rgba(15,23,42,.055)}
+.feeBadge:before{content:'';width:7px;height:7px;border-radius:50%;background:#34d399;box-shadow:0 0 0 4px rgba(52,211,153,.15)}
+.feeLedger{position:relative;border:1px solid #dbe5ef;border-radius:24px;background:#fff;overflow:hidden}
+.feeLedgerHead,.feeRow{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-items:center}
+.feeLedgerHead{min-height:54px;background:linear-gradient(90deg,#f8fafc,#eef6f9);border-bottom:1px solid #dbe5ef;color:#475569;font-size:13px;font-weight:1000}
+.feeLedgerHead>div,.feeRow>div{padding:0 18px}.feeLedgerHead .amountCell,.feeLedgerHead .rateCell{text-align:center}
+.feeRow{position:relative;min-height:66px;margin:8px 14px;border-radius:18px;background:#fff;transition:.16s}
+.feeRow+.feeRow{border-top:0}.feeRow:before{content:'';position:absolute;left:0;top:0;bottom:0;width:0;border-radius:18px 0 0 18px;background:#38bdf8;transition:.16s}
+.feeRow:hover{background:#f8fafc;box-shadow:0 10px 26px rgba(15,23,42,.075);transform:translateY(-1px)}
+.feeRow:hover:before{width:5px}.feeRow.emphasis{background:#f8fafc;border:1px solid #e2e8f0;box-shadow:0 10px 26px rgba(15,23,42,.06)}
+.feeRow.emphasis:before{width:5px;background:#38bdf8}.feeRow.tax{background:#f0fdf4;border:1px solid #bbf7d0}.feeRow.tax:before{width:5px;background:#10b981}
+.feeName{font-size:16px;font-weight:1000;color:#334155}.amountCell{text-align:center;font-variant-numeric:tabular-nums}.rateCell{text-align:center;font-size:18px;font-weight:1000;color:#0f172a;font-variant-numeric:tabular-nums}.feeRow.tax .rateCell{color:#047857}
+.tableMoney{display:grid;grid-template-rows:auto auto;gap:2px;align-items:center;justify-items:center;line-height:1.12}
+.tableMoney .thbPart{font-size:18px;font-weight:1000;color:#0f172a}.tableMoney .rmbPart{font-size:13px;font-weight:900;color:#64748b}.tableMoney .sep{display:none}.tableMoney.single{display:block;font-size:18px;font-weight:1000;color:#0f172a;text-align:center}.feeRow.tax .tableMoney .thbPart{color:#047857}
+.note{margin-top:14px;background:#f8fafc;border:1px solid #dbe5ef;border-radius:18px;padding:13px 15px;font-size:12px;line-height:1.7;color:#64748b;font-weight:780}
+.hidden{display:none}.tooltip{position:fixed;z-index:9999;max-width:430px;background:rgba(15,23,42,.96);color:#fff;border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:13px 15px;font-size:12px;line-height:1.65;white-space:pre-line;box-shadow:0 18px 50px rgba(0,0,0,.32);pointer-events:none;opacity:0;transform:translateY(5px) scale(.98);transition:.12s}.tooltip.show{opacity:1;transform:translateY(0) scale(1)}
+@media(max-width:980px){.uploadCard{grid-template-columns:1fr;margin-top:-34px}.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:640px){body{padding:12px}.topbar{border-radius:24px;padding:22px 18px;min-height:160px}.topbar h1{font-size:24px}.uploadCard{border-radius:22px;padding:12px}.uploadRow,.controlBox{grid-template-columns:1fr}.numInput{width:100%}.head{display:grid}.currencyToggle{min-width:0;width:100%}.grid{grid-template-columns:1fr}.feeSection{padding:13px;border-radius:22px}.feeSectionHead{display:grid}.feeBadge{justify-self:start}.feeLedgerHead,.feeRow{grid-template-columns:repeat(3,minmax(0,1fr))}.feeLedgerHead>div,.feeRow>div{padding:0 10px}.feeName{font-size:14px}.rateCell{font-size:15px}.tableMoney .thbPart,.tableMoney.single{font-size:15px}.tableMoney .rmbPart{font-size:12px}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <h1>TikTok Shop 后台数据分析</h1>
+    <p>上传收入报表，识别历史成交、退货、结算率、真实费率，并显示费用解释。</p>
+  </header>
+
+  <section class="uploadCard">
+    <div class="uploadRow">
+      <input class="fileInput" id="settlementFile" type="file" accept=".xlsx,.xls,.csv">
+      <button class="primaryBtn" id="analyzeBtn" type="button">分析后台表格</button>
+    </div>
+    <div class="controlGrid">
+      <div class="controlBox">
+        <div><div class="label">汇率</div><div class="sub">用于 THB / RMB 换算，默认 4.75</div></div>
+        <input class="numInput" id="fxRate" type="text" inputmode="decimal" value="4.75">
+      </div>
+      <div class="controlBox">
+        <div><div class="label">平均单件成本（RMB）</div><div class="sub">用于估算历史实际利润，后台表格不含真实成本</div></div>
+        <input class="numInput" id="avgCostRmb" type="text" inputmode="decimal" value="0">
+      </div>
+    </div>
+    <div class="status" id="status">请选择 TikTok Shop 后台收入报表。</div>
+  </section>
+
+  <section class="panel hidden" id="resultPanel">
+    <div class="head">
+      <div>
+        <div class="title">后台真实数据分析</div>
+        <div class="sub" id="analysisSub">等待导入数据</div>
+      </div>
+      <div class="currencyToggle" aria-label="货币显示切换">
+        <button id="currencyBoth" class="active" type="button">双显示</button>
+        <button id="currencyThb" type="button">泰铢</button>
+        <button id="currencyRmb" type="button">人民币</button>
+      </div>
+    </div>
+    <div id="analysisContent"></div>
+  </section>
+</div>
+
+<div id="tooltip" class="tooltip"></div>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script>
+(()=>{'use strict';
+const $=id=>document.getElementById(id);
+const finite=(v,f=0)=>Number.isFinite(v)?v:f;
+const setT=(id,t)=>{const e=$(id);if(e)e.innerText=String(t??'')};
+const inp=(id,f=0)=>{const e=$(id),v=e?Number.parseFloat(String(e.value).replace(/[，,]/g,'.')):f;return Number.isFinite(v)?v:f};
+const thb=v=>'฿'+finite(v).toFixed(2);
+const rmb=v=>'¥'+(finite(v)/(inp('fxRate',4.75)||4.75)).toFixed(2);
+let currencyMode='BOTH';
+function money(v){
+  if(currencyMode==='THB')return `<span class="moneyStack"><span>${thb(v)}</span><span class="ghost">${rmb(v)}</span></span>`;
+  if(currencyMode==='RMB')return `<span class="moneyStack"><span>${rmb(v)}</span><span class="ghost">${thb(v)}</span></span>`;
+  return `<span class="moneyStack"><span>${thb(v)}</span><span>${rmb(v)}</span></span>`;
+}
+let lastAnalysis=null;
+function toNum(v){if(typeof v==='number')return Number.isFinite(v)?v:0;if(v==null)return 0;return Number(String(v).replace(/[^0-9.\-]/g,''))||0}
+function rate(a,b){return b>0?a/b:0}
+function pick(row,names){const keys=Object.keys(row||{});for(const n of names){const hit=keys.find(k=>String(k).trim().toLowerCase()===String(n).trim().toLowerCase());if(hit)return row[hit]}for(const n of names){const hit=keys.find(k=>String(k).toLowerCase().includes(String(n).toLowerCase()));if(hit)return row[hit]}return 0}
+function tipAttr(t){return String(t||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;')}
+function card(k,v,cls,t){return `<div class="card ${cls||''}" data-tip="${tipAttr(t)}"><div class="k">${k}</div><div class="v"><span class="valueStack">${v}</span></div></div>`}
+function inlineMoney(v){
+  if(currencyMode==='THB')return `<span class="tableMoney single">${thb(v)}</span>`;
+  if(currencyMode==='RMB')return `<span class="tableMoney single">${rmb(v)}</span>`;
+  return `<span class="tableMoney"><span class="thbPart">${thb(v)}</span><span class="sep">/</span><span class="rmbPart">${rmb(v)}</span></span>`;
+}
+function feeRow(name,amount,feeRate,tip,cls=''){
+  return `<div class="feeRow ${cls}" data-tip="${tipAttr(tip)}"><div class="feeName">${name}</div><div class="amountCell">${inlineMoney(amount)}</div><div class="rateCell">${(feeRate*100).toFixed(2)}%</div></div>`;
+}
+function profitValue(v,rate){return `${money(v)}<span class="profitRateLine">利润率 ${(rate*100).toFixed(2)}%</span>`}
+
+const feeExplainCN={
+  settlement:'Total settlement amount：平台计算后最终结算到你账户的金额。',
+  revenue:'Total Revenue：后台统计的成交收入，用作各项费率的分母。',
+  order:'Order/adjustment ID：交易 ID；这里按非重复 ID 统计成交单数。Quantity：成交商品数量。',
+  refund:'Customer refund：实际退还给客户的金额；退货单数按该列不为 0 的行数统计。',
+  transaction:'Transaction fee：平台为订单交易功能收取的手续费。原表说明公式为（客户付款 - 退款）× 费率。',
+  commission:'TikTok Shop commission fee：平台佣金。若历史报表为 0，表示该报表周期未实扣该项。',
+  growth:'Commerce growth fee：电商增长服务费。适用于已送达包裹，包括有退货/退款申请的包裹；按含税商品售价减去卖家折扣计算，单件上限 199 泰铢。',
+  tax:'Import duty and value added tax：进口关税和增值税。自 2026-01-01 起，泰国对价值超过 1 泰铢的进口商品征收，TikTok Shop 会代扣并代缴给泰国海关。',
+  affiliate:'Affiliate Commission：达人佣金。公式为（不含税商品价格 - 卖家折扣）× 佣金率；如果订单结算后发生退款，达人佣金通常不会退回。',
+  shipping:'Seller shipping fee：卖家承担的运费。公式为实际运费 - 平台运费折扣 - 买家支付运费。',
+  infrastructure:'Infrastructure fee：基础设施服务费，适用于通过 TikTok Shop 完成的交易，用于平台技术基础设施的建设、维护和改进。',
+  totalFees:'Total Fees：后台汇总的费用总额；后台综合费率 = Total Fees ÷ Total Revenue。'
+};
+
+function fixSheetRange(ws){if(!ws||typeof XLSX==='undefined')return ws;let range=null;Object.keys(ws).forEach(k=>{if(!/^[A-Z]+[0-9]+$/.test(k))return;const c=XLSX.utils.decode_cell(k);if(!range)range={s:{r:c.r,c:c.c},e:{r:c.r,c:c.c}};else{range.s.r=Math.min(range.s.r,c.r);range.s.c=Math.min(range.s.c,c.c);range.e.r=Math.max(range.e.r,c.r);range.e.c=Math.max(range.e.c,c.c)}});if(range)ws['!ref']=XLSX.utils.encode_range(range);return ws}
+function sheetToRows(ws){
+  fixSheetRange(ws);
+  const raw=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+  const keywords=['total revenue','subtotal after seller discounts','sku subtotal','product subtotal','buyer paid','amount paid','customer payment','order amount','settlement','transaction fee','commerce growth fee','commission fee','sales tax','infrastructure fee','商品小计','商品金额','买家实付','买家付款','总收入','收入','订单金额','结算','交易手续费','佣金','增长服务费','税费','基础设施'];
+  let headerIndex=0,bestScore=-1;
+  raw.forEach((row,i)=>{const line=row.map(x=>String(x).trim().toLowerCase()).join(' | ');const score=keywords.reduce((n,k)=>n+(line.includes(k)?1:0),0);if(score>bestScore){bestScore=score;headerIndex=i}});
+  const headers=(raw[headerIndex]||[]).map((h,i)=>String(h||`Column_${i}`).trim()||`Column_${i}`);
+  const rows=[];
+  for(let i=headerIndex+1;i<raw.length;i++){const arr=raw[i]||[];if(!arr.some(v=>String(v).trim()!==''))continue;const obj={};headers.forEach((h,j)=>obj[h]=arr[j]);rows.push(obj)}
+  return {rows,raw,headerIndex,bestScore,headers};
+}
+function summaryVal(raw,names){for(const row of raw||[]){const label=row.map(v=>String(v||'').trim()).filter(Boolean).join(' ').toLowerCase();if(!names.some(n=>label.includes(String(n).toLowerCase())))continue;for(let i=row.length-1;i>=0;i--){const v=toNum(row[i]);if(v!==0)return Math.abs(v)}}return 0}
+function analyzeSummary(raw){
+  const rev=summaryVal(raw,['Total Revenue']),settle=summaryVal(raw,['Total settlement amount']),totalFees=summaryVal(raw,['Total Fees']),commission=summaryVal(raw,['TikTok Shop commission fee']),transaction=summaryVal(raw,['Transaction fee']),growth=summaryVal(raw,['Commerce growth fee']),tax=summaryVal(raw,['Import duty and value added tax']),infra=summaryVal(raw,['Infrastructure fee','Infrastructure service fee']),affiliate=summaryVal(raw,['Affiliate Commission']),sellerShip=summaryVal(raw,['Seller shipping fee']),refundAmount=summaryVal(raw,['Refund subtotal after seller discounts']);
+  if(!rev||!totalFees)return null;
+  const other=Math.max(0,totalFees-commission-transaction-growth-tax-infra-affiliate-sellerShip);
+  return {source:'月度汇总',rev,settle,totalFees,commission,transaction,growth,tax,infra,affiliate,ship:sellerShip,other,refundAmount,settleRate:rate(settle,rev),feeRate:rate(totalFees,rev),commissionRate:rate(commission,rev),transactionRate:rate(transaction,rev),growthRate:rate(growth,rev),taxRate:rate(tax,rev),infraRate:rate(infra,rev),affiliateRate:rate(affiliate,rev),shipRate:rate(sellerShip,rev),returnRate:rate(refundAmount,rev+refundAmount),hasSettlement:settle>0};
+}
+function detailStats(rows){const orderIds=new Set();let refundCount=0,orderQty=0,refundQty=0,refundTotal=0,detailRows=0;rows.forEach(r=>{const id=String(pick(r,['Order/adjustment ID','Order ID','订单号','订单ID'])||'').trim(),customerRefund=toNum(pick(r,['Customer refund','Customer Refund','客户退款','买家退款'])),qty=Math.abs(toNum(pick(r,['Quantity','数量'])));if(id){orderIds.add(id);detailRows++}if(qty>0)orderQty+=qty;if(customerRefund!==0){refundCount++;refundQty+=qty||1;refundTotal+=Math.abs(customerRefund)}});return{orderCount:orderIds.size,refundCount,orderQty,refundQty,refundTotal,detailRows}}
+function showAnalysis(a){
+  lastAnalysis=a;
+  const orderCount=a.orderCount||0,orderQty=a.orderQty||0,refundCount=a.refundCount||0,refundTotal=a.refundTotal||a.refundAmount||0,returnRate=a.returnRate||(orderCount?refundCount/orderCount:0),settled=a.hasSettlement?a.settle:Math.max(0,a.rev-a.totalFees),costQty=orderQty||orderCount||0,costThb=inp('avgCostRmb')*inp('fxRate',4.75)*costQty,historyProfit=settled-costThb,historyMargin=a.rev?historyProfit/a.rev:0,detailWarn=(a.detailRows&&a.detailRows<=1&&a.source==='月度汇总')?' 当前文件的 Order details 仅包含 1 条明细，单数/数量只能按这 1 条显示；需要导出完整订单明细才能得到真实成交单数。':'';
+  $('resultPanel')?.classList.remove('hidden');
+  setT('analysisSub',`已识别 ${a.source||'后台数据'}；工作表：${a.sheetName||'自动识别'}`);
+  $('analysisContent').innerHTML=`<div class="grid">${card('成交单数 / 成交数量',`${orderCount||'未识别'} / ${orderQty||'未识别'}`,'',feeExplainCN.order)}${card('成交金额',money(a.rev),'',feeExplainCN.revenue)}${card('退货单数 / 退货率',`${refundCount||'未识别'} / ${(returnRate*100).toFixed(2)}%`,'',`${feeExplainCN.refund}\n退货率 = 退货单数 ÷ 成交单数。`)}${card('退货总额',money(refundTotal),'',feeExplainCN.refund)}${card('历史成本合计',money(costThb),'','历史成本合计 = 平均单件成本 × 成交数量 × 汇率。')}${card('历史实际利润',profitValue(historyProfit,historyMargin),historyProfit>=0?'good':'bad','历史实际利润 = 后台结算金额 - 历史成本合计。若未识别结算金额，则用成交金额 - 后台总费用作为近似结算额。')}${card('真实结算率',a.hasSettlement?(a.settleRate*100).toFixed(2)+'%':'未识别','',`${feeExplainCN.settlement}\n真实结算率 = Total settlement amount ÷ Total Revenue。`)}${card('后台综合费率',(a.feeRate*100).toFixed(2)+'%','',feeExplainCN.totalFees)}</div><section class="feeSection"><div class="feeSectionHead"><div><div class="feeSectionTitle">费用拆解</div><div class="feeSectionSub">金额采用上下双币显示：泰铢为后台原始金额，人民币按当前汇率折算。</div></div><div class="feeBadge">已应用历史后台数据</div></div><div class="feeLedger"><div class="feeLedgerHead"><div>费用项</div><div class="amountCell">金额</div><div class="rateCell">识别费率</div></div>${feeRow('佣金',a.commission,a.commissionRate,feeExplainCN.commission)}${feeRow('交易手续费',a.transaction,a.transactionRate,feeExplainCN.transaction,'emphasis')}${feeRow('增长服务费',a.growth,a.growthRate,feeExplainCN.growth)}${feeRow('真实税费',a.tax,a.taxRate,feeExplainCN.tax,'tax')}${feeRow('达人佣金',a.affiliate||0,a.affiliateRate,feeExplainCN.affiliate)}${feeRow('物流净成本',a.ship,a.shipRate,feeExplainCN.shipping)}${feeRow('基础设施服务费',a.infra,a.infraRate,feeExplainCN.infrastructure)}</div><div class="note">说明文本已按 Fees explanation 工作表翻译为中文，并挂到对应卡片/费用行的悬浮提示中。本页面只展示历史后台数据和真实费率，不展示当前定价推导结果。${detailWarn}</div></section>`;
+}
+function parseFile(file){if(!file){setT('status','请先选择文件');return}if(typeof XLSX==='undefined'){setT('status','Excel 解析库未加载，请联网刷新后再试');return}setT('status','正在读取并识别订单字段...');const reader=new FileReader();reader.onload=e=>{try{const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array'});let best={rows:[],raw:[],bestScore:-1,headers:[],sheetName:''},summary=null,details=null;wb.SheetNames.forEach(name=>{const parsed=sheetToRows(wb.Sheets[name]);const s=analyzeSummary(parsed.raw);if(s&&!summary)summary={...s,sheetName:name};if(String(name).toLowerCase().includes('order'))details=detailStats(parsed.rows);if(parsed.bestScore>best.bestScore)best={...parsed,sheetName:name}});const a=summary;if(!a){const sample=(best.headers||[]).filter(Boolean).slice(0,14).join('、');setT('status',`没有识别到月度汇总；工作表「${best.sheetName||'未知'}」表头示例：${sample||'未读到表头'}`);return}if(details){a.orderCount=details.orderCount;a.refundCount=details.refundCount;a.orderQty=details.orderQty;a.refundQty=details.refundQty;a.refundTotal=details.refundTotal;a.detailRows=details.detailRows;if(details.orderCount)a.returnRate=details.refundCount/details.orderCount}a.sheetName=a.sheetName||best.sheetName;setT('status',`分析完成：${a.source}，后台综合费率 ${(a.feeRate*100).toFixed(2)}%`);showAnalysis(a)}catch(err){console.error(err);setT('status','表格解析失败，请确认是 TikTok 后台导出的 Excel')}};reader.readAsArrayBuffer(file)}
+function initTooltip(){const tt=$('tooltip');let active=null;const hide=()=>{active=null;tt.classList.remove('show')},move=e=>{const r=tt.getBoundingClientRect();let x=e.clientX+14,y=e.clientY+14;if(x+r.width>innerWidth-10)x=e.clientX-r.width-14;if(y+r.height>innerHeight-10)y=e.clientY-r.height-14;tt.style.left=Math.max(8,x)+'px';tt.style.top=Math.max(8,y)+'px'};document.addEventListener('mouseover',e=>{const el=e.target.closest?.('[data-tip]');if(!el||!el.dataset.tip||active===el)return;active=el;tt.innerText=el.dataset.tip;tt.classList.add('show');move(e)});document.addEventListener('mousemove',e=>{if(active)move(e)});document.addEventListener('mouseout',e=>{if(active&&!active.contains(e.relatedTarget))hide()});addEventListener('scroll',hide,{passive:true});addEventListener('blur',hide)}
+$('analyzeBtn')?.addEventListener('click',()=>parseFile($('settlementFile')?.files?.[0]));
+['fxRate','avgCostRmb'].forEach(id=>$(id)?.addEventListener('input',()=>{if(lastAnalysis)showAnalysis(lastAnalysis)}));
+function setCurrencyMode(mode){
+  currencyMode=mode==='THB'?'THB':mode==='RMB'?'RMB':'BOTH';
+  $('currencyBoth')?.classList.toggle('active',currencyMode==='BOTH');
+  $('currencyThb')?.classList.toggle('active',currencyMode==='THB');
+  $('currencyRmb')?.classList.toggle('active',currencyMode==='RMB');
+  if(lastAnalysis)showAnalysis(lastAnalysis);
+}
+$('currencyBoth')?.addEventListener('click',()=>setCurrencyMode('BOTH'));
+$('currencyThb')?.addEventListener('click',()=>setCurrencyMode('THB'));
+$('currencyRmb')?.addEventListener('click',()=>setCurrencyMode('RMB'));
+initTooltip();
+})();
+</script>
+</body>
+</html>
